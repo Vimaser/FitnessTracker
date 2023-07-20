@@ -15,7 +15,7 @@ Initialize Database
 Run Seed Script
 
     npm run seed:dev
-
+//updates
 ## Automated Tests
 
 **NOTE:** At first, there will be too many errors for the tests to even run. Start by running the seed:dev script above, until it is working.
