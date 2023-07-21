@@ -35,5 +35,5 @@ module.exports = {
   createUser,
   getUser,
   getUserById,
-  getUserByUsername,
+  getUserByUsername
 }
