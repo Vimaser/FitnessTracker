@@ -3,6 +3,9 @@
 DO NOT CHANGE THIS FILE
 
 */
+if (typeof TextEncoder === 'undefined') {
+  global.TextEncoder = require('util').TextEncoder;
+}
 require("dotenv").config();
 const request = require("supertest");
 const faker = require("faker");
