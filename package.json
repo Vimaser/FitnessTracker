@@ -8,7 +8,7 @@
     "seed": "node ./db/seed.js",
     "start:dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "jest --runInBand",
+    "test": "jest --runInBand --verbose",
     "test:watch": "jest --runInBand --watchAll"
   },
   "repository": {
