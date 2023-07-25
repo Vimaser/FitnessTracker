@@ -18,7 +18,7 @@ describe("DB Activities", () => {
   describe("createActivity({ name, description })", () => {
     xit("Creates and returns the new activity", async () => {
       const activityToCreate = {
-        name: "Marathon",
+        name: "marathon",
         description: "Run all the miles",
       };
       const createdActivity = await createActivity(activityToCreate);
