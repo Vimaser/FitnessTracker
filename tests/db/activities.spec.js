@@ -3,7 +3,12 @@
 DO NOT CHANGE THIS FILE
 
 */
+
 require("dotenv").config();
+if (typeof TextEncoder === 'undefined') {
+  global.TextEncoder = require('util').TextEncoder;
+}
+
 const client = require("../../db/client");
 const {
   getAllActivities,
