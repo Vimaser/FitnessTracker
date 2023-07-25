@@ -21,9 +21,9 @@ const { createFakeActivity } = require("../helpers");
 
 describe("DB Activities", () => {
   describe("createActivity({ name, description })", () => {
-    xit("Creates and returns the new activity", async () => {
+    it("Creates and returns the new activity", async () => {
       const activityToCreate = {
-        name: "Marathon",
+        name: "marathon",
         description: "Run all the miles",
       };
       const createdActivity = await createActivity(activityToCreate);
@@ -33,7 +33,7 @@ describe("DB Activities", () => {
   });
 
   describe("getAllActivities", () => {
-    xit("Selects and returns an array of all activities", async () => {
+    it("Selects and returns an array of all activities", async () => {
       await createFakeActivity("Sit ups", "Do 100 reps");
       const activities = await getAllActivities();
       const { rows: activitiesFromDatabase } = await client.query(`
@@ -44,7 +44,7 @@ describe("DB Activities", () => {
   });
 
   describe("getActivityById", () => {
-    xit("Gets activities by their id", async () => {
+    it("Gets activities by their id", async () => {
       const fakeActivity = await createFakeActivity("Crunches", "Do 40 reps");
       const activity = await getActivityById(fakeActivity.id);
       expect(activity.id).toEqual(fakeActivity.id);
@@ -54,7 +54,7 @@ describe("DB Activities", () => {
   });
 
   describe("getActivityByName", () => {
-    xit("Gets an activity by it's name", async () => {
+    it("Gets an activity by it's name", async () => {
       const fakeActivity = await createFakeActivity(
         "Power Walking",
         "At the mall"
@@ -65,7 +65,7 @@ describe("DB Activities", () => {
   });
 
   describe("updateActivity", () => {
-    xit("Updates name without affecting the ID. Returns the updated Activity.", async () => {
+    it("Updates name without affecting the ID. Returns the updated Activity.", async () => {
       const fakeActivity = await createFakeActivity(
         "Baseball",
         "Run the bases"
@@ -80,7 +80,7 @@ describe("DB Activities", () => {
       expect(updatedActivity.description).toEqual(fakeActivity.description);
     });
 
-    xit("Updates description without affecting the ID. Returns the updated Activity.", async () => {
+    it("Updates description without affecting the ID. Returns the updated Activity.", async () => {
       const fakeActivity = await createFakeActivity("Soccer", "After school");
       const description = "Football is life!";
       const updatedActivity = await updateActivity({
