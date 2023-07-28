@@ -85,7 +85,38 @@ async function getActivityByName(name) {
 }
 
 // used as a helper inside db/routines.js
-async function attachActivitiesToRoutines(routines) {}
+// Kierrany's solution
+async function attachActivitiesToRoutines(routines) {
+  try {
+    const {rows: activities } = await client.query(`
+    SELECT activities.*
+    FROM activities
+    JOIN routine_activities ON activities.id=routine_activities."activityId"
+    WHERE routine_activies."routineId"=${routine.id}
+    `);
+
+    const {rows: routine_activies } = await client.query(`
+    SELECT activities.*
+    FROM activities
+    JOIN routine_activities ON activities.id=routine_activities."activityId"
+    WHERE routine_activies."routineId"=${routine.id}
+    `);
+
+    activities.map(activity => routine_activies.filter(routine_activies => {
+      if (activity.id === routine_activies.activityId) {
+        activity.count = routine_activity.count
+        activity.duration = routine_activity.duration
+        activity.routineId = routine_activies.routineId
+        activity.routineActivityId = routine_activity.id
+      }
+    }))
+
+    routine.activities = activities;
+    return activities;
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 async function updateActivity({ id, ...fields }) {
   // don't try to update the id

@@ -74,7 +74,7 @@ async function updateRoutineActivity({ id, ...fields }) {
 
   const {rows} = await client.query(
     `
-    UPDATE routine_activies
+    UPDATE routine_activities
     SET ${updateFields}
     WHERE id=$${values.length + 1}
     RETURNING *;
@@ -89,9 +89,51 @@ async function updateRoutineActivity({ id, ...fields }) {
   throw error;
 }}
 
-async function destroyRoutineActivity(id) {}
+async function destroyRoutineActivity(id) {
+  try {
+    const { rows } = await client.query(
+      `
+      DELETE FROM routine_activities
+      WHERE id = $1
+      RETURNING *;
+    `, [id]);
+    
+    console.log('rowsCount:', rows);
 
-async function canEditRoutineActivity(routineActivityId, userId) {}
+    if (rows.length === 0) {
+      return null;
+    }
+
+    return rows[0];
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function canEditRoutineActivity(routineActivityId, userId) {
+  try {
+    const {rows: [routineActivity] } = await client.query(
+      `
+      SELECT ra.*, r."creatorId" AS "routineCreatorId"
+      FROM routine_activities ra
+      JOIN routines r ON ra."routineId" = r.id
+      WHERE ra.id = $1
+      `,
+      [routineActivityId]
+    );
+
+    if (!routineActivity) {
+      return false;
+    }
+
+    const isCreator = routineActivity.routineCreatorId === userId;
+
+    return isCreator
+    
+  } catch (error) {
+    throw error
+  }
+}
 
 module.exports = {
   getRoutineActivityById,
