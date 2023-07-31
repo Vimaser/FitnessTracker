@@ -10,7 +10,7 @@ const {
 // POST /api/users/register
 
 apiRouter.post('/api/users/register', async (req, res, next) => {
-    const { username, password, name, location } = req.body;
+    const { username, password } = req.body;
     
     try {
         const _user = await getUserByUsername(username);
@@ -21,7 +21,12 @@ apiRouter.post('/api/users/register', async (req, res, next) => {
                 message: "A user by that name already exists",
             });
         }
-        const user = await c
+        const user = await createUser({
+            username,
+            password
+        });
+
+        
     } catch (error) {
         
     }

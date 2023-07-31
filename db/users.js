@@ -5,9 +5,11 @@ const client = require("./client");
 
 // user functions
 async function createUser({ username, password }) {
+  
   try {
+    const SALT_COUNT = 10;
     // Hash the password before storing it in the database
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, SALT_COUNT);
     const { rows } = await client.query(
       `
       INSERT INTO users (username, password)
@@ -25,25 +27,23 @@ async function createUser({ username, password }) {
 
 async function getUser({ username, password }) {
   try {
-    const { rows } = await client.query(
-      `
-      SELECT id, username, password
-      FROM users
-      WHERE username = $1
-    `,
-      [username]
-    );
-    const user = rows[0];
+    // Call the getUserByUsername function to retrieve the user object from the database based on the provided username
+    const user = await getUserByUsername(username);
+
     if (!user) {
       return null;
     }
-    // Verify the password using bcrypt.compare() only if the user exists
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+
+    const hashedPassword = user.password;
+    const passwordsMatch = await bcrypt.compare(password, hashedPassword);
+
+    if (!passwordsMatch) {
       return null;
     }
+
     // Exclude the password field from the result
     delete user.password;
+
     return user;
   } catch (error) {
     throw error;
