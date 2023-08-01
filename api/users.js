@@ -1,7 +1,7 @@
 /* eslint-disable no-useless-catch */
 const express = require("express");
 const router = express.Router();
-
+const bcrypt = require('bcrypt');
 const {   
     createUser,
     getUser,
@@ -9,28 +9,30 @@ const {
     getUserByUsername } = require('../db/users');
 // POST /api/users/register
 
-apiRouter.post('/api/users/register', async (req, res, next) => {
-    const { username, password } = req.body;
+router.post('/register', async (req, res, next) => {
+    
     
     try {
-        const _user = await getUserByUsername(username);
-
-        if (_user) {
-            next({
-                name: "UserExistsError",
-                message: "A user by that name already exists",
-            });
-        }
-        const user = await createUser({
-            username,
-            password
+        const { username, password } = req.body;
+        const hashPassword = await bcrypt.hash(password, 10);
+        const newUser = await createUser({
+            username, 
+            password: hashPassword,
         });
-
+        res.json({
+            success: true,
+            error: null,
+            data: {
+                token: generateToken(newUser),
+                message: "Thanks for signing up!",
+            }, 
+        });
         
-    } catch (error) {
-        
+    } catch ({ name, message }) {
+        next({ name, message });
     }
-})
+});
+
 // POST /api/users/login
 
 // GET /api/users/me
