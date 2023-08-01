@@ -5,7 +5,43 @@ const client = require("./client");
 
 // user functions
 async function createUser({ username, password }) {
+  try {
+    const SALT_COUNT = 10;
   
+    const hashedPassword = await bcrypt.hash(password, SALT_COUNT);
+    const { rows } = await client.query(
+      `
+      INSERT INTO users (username, password)
+      VALUES ($1, $2)
+      RETURNING id, username
+    `,
+      [username, hashedPassword]
+    );
+    const user = rows[0];
+    
+  
+    return {
+      data: {
+        message: "Thanks for signing up!",
+        user: {
+          id: user.id,
+          username: user.username,
+        },
+      },
+      error: null,
+      success: true,
+    };
+  } catch (error) {
+    // Check for duplicate username error
+    if (error.code === '23505' && error.constraint === 'users_username_key') {
+      throw new Error('Username already exists.');
+    }
+    throw error;
+  }
+}
+
+
+/* async function createUser({ username, password }) {
   try {
     const SALT_COUNT = 10;
     // Hash the password before storing it in the database
@@ -19,15 +55,20 @@ async function createUser({ username, password }) {
       [username, hashedPassword]
     );
     const user = rows[0];
-    return user;
+    return user; // Return the complete user object with id and username
   } catch (error) {
+    // Check for duplicate username error
+    if (error.code === '23505' && error.constraint === 'users_username_key') {
+      throw new Error('Username already exists.');
+    }
     throw error;
   }
-}
+} */
+
 
 async function getUser({ username, password }) {
   try {
-    // Call the getUserByUsername function to retrieve the user object from the database based on the provided username
+   
     const user = await getUserByUsername(username);
 
     if (!user) {
@@ -41,7 +82,7 @@ async function getUser({ username, password }) {
       return null;
     }
 
-    // Exclude the password field from the result
+   
     delete user.password;
 
     return user;

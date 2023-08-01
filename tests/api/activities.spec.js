@@ -49,7 +49,7 @@ describe("/api/activities", () => {
       const { token } = await createFakeUserWithToken("bob");
 
       const activityData = {
-        name: "Pull ups",
+        name: "pull ups",
         description: "Do 20 reps",
       };
 
