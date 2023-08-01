@@ -1,10 +1,9 @@
 const client = require('./client');
 
 async function createActivity({ name, description }) {
-  // return the new activity
   try {
     // Lowercase the activity name to ensure case-insensitive uniqueness
-      const lowercasedName = name.toLowerCase();
+    const lowercasedName = name.toLowerCase();
 
     // Check if an activity with the same name already exists
     const { rows: existingActivities } = await client.query(
@@ -31,6 +30,7 @@ async function createActivity({ name, description }) {
     throw error;
   }
 }
+
 
 async function getAllActivities() {
   // select and return an array of all activities
