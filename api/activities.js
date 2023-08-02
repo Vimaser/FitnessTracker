@@ -27,9 +27,18 @@ router.get("/", async (req, res, next) => {
       const newActivity = await createActivity({ name, description });
       res.status(201).json(newActivity);
     } catch (error) {
+      if (error.name === 'DuplicateActivity') {
+        return res.status(409).json({
+          error: 'DuplicateActivity',
+          message: `An activity with name ${req.body.name} already exists`,
+          /* message: "An activity with name Push Ups already exists", */
+          name: `Any`
+        });
+      }
       next(error);
     }
   });
+
   
   // GET /api/activities/:activityId/routines
   router.get("/:activityId/routines", async (req, res, next) => {
@@ -57,23 +66,101 @@ router.get("/", async (req, res, next) => {
   });
   
   // PATCH /api/activities/:activityId
+
+/* 
   router.patch("/:activityId", async (req, res, next) => {
     try {
       const { activityId } = req.params;
       const { name, description } = req.body;
   
-    
+      const updatedActivity = await updateActivity({ id: activityId, name, description });
   
-      const updatedActivity = await updateActivity({
-        id: activityId,
-        name,
-        description,
+      res.json({
+        success: true,
+        error: null,
+        data: {
+          id: updatedActivity.id,
+          description: updatedActivity.description,
+          name: updatedActivity.name,
+          
+        },
+      });
+    } catch (error) {
+      if (error.name === 'ActivityNotFound') {
+        return res.status(404).json({
+          success: false,
+          error: 'ActivityNotFound',
+          message: `Activity ${req.params.activityId} not found`,
+        });
+      } else if (error.name === 'DuplicateActivity') {
+        return res.status(409).json({
+          success: false,
+          error: 'DuplicateActivity',
+          message: `An activity with the name ${req.body.name} already exists`,
+        });
+      }
+  
+      res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        message: 'An error occurred while updating the activity.',
       });
   
-      res.json(updatedActivity);
+      next(error);
+    }
+  }); */
+  
+  router.patch("/:activityId", async (req, res, next) => {
+    try {
+      const { activityId } = req.params;
+      const { name, description } = req.body;
+  
+      const updatedActivity = await updateActivity({ id: activityId, name, description });
+  
+      if (!updatedActivity) {
+        // Handle the case where the activity was not found
+        return res.status(404).json({
+          success: false,
+          error: 'ActivityNotFound',
+          message: `Activity ${activityId} not found`,
+        });
+      }
+  
+      res.json({
+        success: true,
+        error: null,
+        data: {
+          name: updatedActivity.name,
+          description: updatedActivity.description,
+        },
+      });
     } catch (error) {
+      if (error.name === 'ActivityNotFound') {
+        // Handle the ActivityNotFound error separately
+        return res.status(404).json({
+          success: false,
+          error: 'ActivityNotFound',
+          message: `Activity ${activityId} not found`,
+        });
+      } else if (error.name === 'DuplicateActivity') {
+        // Handle the DuplicateActivity error separately
+        return res.status(409).json({
+          success: false,
+          error: 'DuplicateActivity',
+          message: `An activity with the name ${req.params.activityId} already exists`,
+        });
+      }
+  
+      // Handle other errors as internal server errors
+      res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        message: 'An error occurred while updating the activity.',
+      });
       next(error);
     }
   });
+  
+  
 
 module.exports = router;

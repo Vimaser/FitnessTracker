@@ -2,18 +2,17 @@ const client = require('./client');
 
 async function createActivity({ name, description }) {
   try {
-    // Lowercase the activity name to ensure case-insensitive uniqueness
     const lowercasedName = name.toLowerCase();
 
-    // Check if an activity with the same name already exists
     const { rows: existingActivities } = await client.query(
       `SELECT * FROM activities WHERE LOWER(name) = $1;`,
       [lowercasedName]
     );
 
     if (existingActivities.length > 0) {
-      // Activity with the same name already exists, throw an error or handle it as appropriate
-      throw new Error('An activity with the same name already exists.');
+      const duplicateActivityError = new Error('An activity with the same name already exists.');
+      duplicateActivityError.name = 'DuplicateActivity';
+      throw duplicateActivityError;
     }
 
     // No activity with the same name found, proceed with insertion
@@ -30,6 +29,8 @@ async function createActivity({ name, description }) {
     throw error;
   }
 }
+
+
 
 
 async function getAllActivities() {
@@ -118,7 +119,7 @@ async function attachActivitiesToRoutines(routines) {
   }
 }
 
-async function updateActivity({ id, ...fields }) {
+/* async function updateActivity({ id, ...fields }) {
   // don't try to update the id
   // do update the name and description
   // return the updated activity
@@ -146,7 +147,95 @@ async function updateActivity({ id, ...fields }) {
   } catch (error) {
     throw error;
   }
+} */
+
+// Inside db/activities.js
+
+/* async function updateActivity({ id, name, description }) {
+  try {
+    const existingActivity = await getActivityById(id);
+
+    if (!existingActivity) {
+      const notFoundError = new Error(`Activity ${id} not found`);
+      notFoundError.name = 'ActivityNotFound';
+      throw notFoundError;
+    }
+
+    // Check if there's an activity with the new name
+    if (name) {
+      const lowercasedName = name.toLowerCase();
+      const { rows: existingActivities } = await client.query(
+        `SELECT * FROM activities WHERE LOWER(name) = $1 AND id != $2;`,
+        [lowercasedName, id]
+      );
+
+      if (existingActivities.length > 0) {
+        const duplicateActivityError = new Error(`An activity with name "${name}" already exists.`);
+        duplicateActivityError.name = 'DuplicateActivity';
+        throw duplicateActivityError;
+      }
+    }
+
+    const { rows } = await client.query(
+      `
+      UPDATE activities
+      SET name = COALESCE($1, name), description = COALESCE($2, description)
+      WHERE id = $3
+      RETURNING *;
+      `,
+      [name, description, id]
+    );
+
+    const updatedActivity = rows[0];
+    return updatedActivity;
+  } catch (error) {
+    throw error;
+  }
+} */
+
+async function updateActivity({ id, name, description }) {
+  try {
+    const existingActivity = await getActivityById(id);
+
+    if (!existingActivity) {
+      const notFoundError = new Error(`Activity ${id} not found`);
+      notFoundError.name = 'ActivityNotFound';
+      throw notFoundError;
+    }
+
+    // Check if there's an activity with the new name
+    if (name) {
+      const lowercasedName = name.toLowerCase();
+      const { rows: existingActivities } = await client.query(
+        `SELECT * FROM activities WHERE LOWER(name) = $1 AND id != $2;`,
+        [lowercasedName, id]
+      );
+
+      if (existingActivities.length > 0) {
+        const duplicateActivityError = new Error('An activity with the same name already exists');
+        duplicateActivityError.name = 'DuplicateActivity';
+        throw duplicateActivityError;
+      }
+    }
+
+    const { rows } = await client.query(
+      `
+      UPDATE activities
+      SET name = COALESCE($1, name), description = COALESCE($2, description)
+      WHERE id = $3
+      RETURNING id, name, description; // Return only the updated fields
+      `,
+      [name, description, id]
+    );
+
+    const updatedActivity = rows[0];
+    return updatedActivity;
+  } catch (error) {
+    throw error;
+  }
 }
+
+
 
 module.exports = {
   getAllActivities,

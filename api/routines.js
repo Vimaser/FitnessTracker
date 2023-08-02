@@ -16,7 +16,7 @@ const {
 // GET /api/routines
 router.get("/", async (req, res, next) => {
     try {
-      const routines = await getAllRoutines();
+      const routines = await getAllPublicRoutines();
       res.json(routines);
     } catch (error) {
       next(error);

@@ -22,7 +22,7 @@ const {
 // POST /api/users/register
 
   
-/* router.post('/register', async (req, res, next) => {
+router.post('/register', async (req, res, next) => {
   try {
     const { username, password } = req.body;
 
@@ -73,7 +73,7 @@ const {
 
     next(error);
   }
-}); */
+});
 
   
 router.post('/register', async (req, res, next) => {
