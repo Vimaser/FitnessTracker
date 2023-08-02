@@ -72,16 +72,21 @@ describe("/api/activities", () => {
         name: "Push Ups",
         description: "Do 25 reps",
       };
-
+     
       const response = await request(app)
         .post("/api/activities")
         .send(activityData)
         .set("Authorization", `Bearer ${token}`);
-
-      expectToHaveErrorMessage(
+        
+        console.log("Response Body:", response.body);
+        expectToHaveErrorMessage(
         response.body,
         ActivityExistsError(activityData.name)
-      );
+      ); 
+/*       expectToHaveErrorMessage(
+        response.body,
+        `An activity with name ${activityData.name} already exists`
+      ); */
     });
   });
 

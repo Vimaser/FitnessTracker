@@ -1,18 +1,19 @@
 const client = require('./client');
 
-async function createActivity({ name, description }) {
+/* async function createActivity({ name, description }) {
   try {
+    // Lowercase the activity name to ensure case-insensitive uniqueness
     const lowercasedName = name.toLowerCase();
 
+    // Check if an activity with the same name already exists
     const { rows: existingActivities } = await client.query(
       `SELECT * FROM activities WHERE LOWER(name) = $1;`,
       [lowercasedName]
     );
 
     if (existingActivities.length > 0) {
-      const duplicateActivityError = new Error('An activity with the same name already exists.');
-      duplicateActivityError.name = 'DuplicateActivity';
-      throw duplicateActivityError;
+      // Activity with the same name already exists, throw an error or handle it as appropriate
+      throw new Error('An activity with the same name already exists.');
     }
 
     // No activity with the same name found, proceed with insertion
@@ -28,8 +29,110 @@ async function createActivity({ name, description }) {
   } catch (error) {
     throw error;
   }
-}
+} */
+/* async function createActivity({ name, description }) {
+  try {
+    const lowercasedName = name.toLowerCase();
+    
+    console.log("Received request to create a new activity.");
+    console.log("Checking if an activity with the name '" + name + "' already exists.");
+    
+    const { rows: existingActivities } = await client.query(
+      `SELECT * FROM activities WHERE LOWER(name) = $1;`,
+      [lowercasedName]
+    );
 
+    if (existingActivities.length > 0) {
+      const error = new Error('DuplicateActivity');
+      error.name = 'DuplicateActivity';
+      error.message = `An activity with name '${name}' already exists.`;
+      throw error;
+    }
+
+    const { rows: [activity] } = await client.query(
+      `INSERT INTO activities (name, description)
+      VALUES ($1, $2)
+      RETURNING *;
+      `,
+      [lowercasedName, description]
+    );
+    
+    console.log("Creating a new activity with the name '" + name + "'.");
+    return activity;
+  } catch (error) {
+    throw error;
+  }
+} */
+
+/* async function createActivity({ name, description }) {
+  try {
+    // Lowercase the activity name to ensure case-insensitive uniqueness
+    const lowercasedName = name.toLowerCase();
+
+    console.log("Received request to create a new activity.");
+    console.log("Checking if an activity with the name '" + name + "' already exists.");
+    // Check if an activity with the same name already exists
+    const { rows: existingActivities } = await client.query(
+      `SELECT * FROM activities WHERE LOWER(name) = $1;`,
+      [lowercasedName]
+    );
+
+    if (existingActivities.length > 0) {
+      // Activity with the same name already exists, throw a custom error
+      const error = new Error('An activity with name ' + name + ' already exists.');
+      error.name = 'DuplicateActivity';
+      error.message = `An activity with name ${name} already exists.`; // Set the error message as expected by the test
+      throw error;
+    }
+
+    // No activity with the same name found, proceed with insertion
+    const { rows: [activity] } = await client.query(
+      `INSERT INTO activities (name, description)
+      VALUES ($1, $2)
+      RETURNING *;
+      `,
+      [lowercasedName, description]
+    );
+    console.log("Creating a new activity with the name '" + name + "'.");
+    return activity;
+  } catch (error) {
+    throw error;
+  }
+} */
+
+async function createActivity(name, description) {
+  try {
+    const existingActivity = await Activity.findOne({ where: { name } });
+
+    if (existingActivity) {
+      // If an activity with the same name already exists, return an error response.
+      return {
+        success: false,
+        error: "ActivityExists",
+        message: `An activity with name ${name} already exists`,
+      };
+    }
+
+    // If the activity does not exist, create it and return the success response.
+    const newActivity = await Activity.create({
+      name,
+      description,
+    });
+
+    return {
+      success: true,
+      data: newActivity,
+      error: null,
+    };
+  } catch (error) {
+    // Handle any other errors that might occur during activity creation.
+    return {
+      success: false,
+      error: "ServerError",
+      message: "An error occurred while creating the activity.",
+    };
+  }
+}
 
 
 
@@ -49,7 +152,7 @@ async function getAllActivities() {
 
 async function getActivityById(id) {
   try {
-    const { rows: [activity]} = await client.query(
+    const { rows: [activity] } = await client.query(
       `
       SELECT *
       FROM activities
@@ -59,13 +162,16 @@ async function getActivityById(id) {
     );
 
     if (!activity) {
-      throw error
+  
+      throw new Error("Activity not found");
     }
+
     return activity;
   } catch (error) {
     throw error;
   }
 }
+
 
 async function getActivityByName(name) {
   try {
@@ -119,7 +225,7 @@ async function attachActivitiesToRoutines(routines) {
   }
 }
 
-/* async function updateActivity({ id, ...fields }) {
+async function updateActivity({ id, ...fields }) {
   // don't try to update the id
   // do update the name and description
   // return the updated activity
@@ -147,95 +253,26 @@ async function attachActivitiesToRoutines(routines) {
   } catch (error) {
     throw error;
   }
-} */
+}
 
-// Inside db/activities.js
-
-/* async function updateActivity({ id, name, description }) {
+async function attachActivityToRoutine(routineId, activityId, count, duration) {
   try {
-    const existingActivity = await getActivityById(id);
-
-    if (!existingActivity) {
-      const notFoundError = new Error(`Activity ${id} not found`);
-      notFoundError.name = 'ActivityNotFound';
-      throw notFoundError;
-    }
-
-    // Check if there's an activity with the new name
-    if (name) {
-      const lowercasedName = name.toLowerCase();
-      const { rows: existingActivities } = await client.query(
-        `SELECT * FROM activities WHERE LOWER(name) = $1 AND id != $2;`,
-        [lowercasedName, id]
-      );
-
-      if (existingActivities.length > 0) {
-        const duplicateActivityError = new Error(`An activity with name "${name}" already exists.`);
-        duplicateActivityError.name = 'DuplicateActivity';
-        throw duplicateActivityError;
-      }
-    }
-
     const { rows } = await client.query(
       `
-      UPDATE activities
-      SET name = COALESCE($1, name), description = COALESCE($2, description)
-      WHERE id = $3
+      INSERT INTO routine_activities ("routineId", "activityId", "count", "duration")
+      VALUES ($1, $2, $3, $4)
       RETURNING *;
       `,
-      [name, description, id]
+      [routineId, activityId, count, duration]
     );
 
-    const updatedActivity = rows[0];
-    return updatedActivity;
-  } catch (error) {
-    throw error;
-  }
-} */
+    const attachedActivity = rows[0];
 
-async function updateActivity({ id, name, description }) {
-  try {
-    const existingActivity = await getActivityById(id);
-
-    if (!existingActivity) {
-      const notFoundError = new Error(`Activity ${id} not found`);
-      notFoundError.name = 'ActivityNotFound';
-      throw notFoundError;
-    }
-
-    // Check if there's an activity with the new name
-    if (name) {
-      const lowercasedName = name.toLowerCase();
-      const { rows: existingActivities } = await client.query(
-        `SELECT * FROM activities WHERE LOWER(name) = $1 AND id != $2;`,
-        [lowercasedName, id]
-      );
-
-      if (existingActivities.length > 0) {
-        const duplicateActivityError = new Error('An activity with the same name already exists');
-        duplicateActivityError.name = 'DuplicateActivity';
-        throw duplicateActivityError;
-      }
-    }
-
-    const { rows } = await client.query(
-      `
-      UPDATE activities
-      SET name = COALESCE($1, name), description = COALESCE($2, description)
-      WHERE id = $3
-      RETURNING id, name, description; // Return only the updated fields
-      `,
-      [name, description, id]
-    );
-
-    const updatedActivity = rows[0];
-    return updatedActivity;
+    return attachedActivity;
   } catch (error) {
     throw error;
   }
 }
-
-
 
 module.exports = {
   getAllActivities,
@@ -243,5 +280,7 @@ module.exports = {
   getActivityByName,
   attachActivitiesToRoutines,
   createActivity,
-  updateActivity
-};
+  updateActivity,
+  attachActivityToRoutine
+}
+

@@ -19,15 +19,20 @@ async function createRoutine({ creatorId, isPublic, name, goal }) {
 
 async function getRoutineById(id) {
   try {
-    const {rows: [routine]} = await client.query(`
-    SELECT *
-    FROM routines
-    WHERE id=$1
-    `, [id])
-    if(!routine) {
-      throw error;
+    const { rows } = await client.query(
+      `
+      SELECT *
+      FROM routines
+      WHERE id = $1;
+      `,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return null;
     }
-    return routine;
+
+    return rows[0];
   } catch (error) {
     throw error;
   }
@@ -142,8 +147,6 @@ async function getAllPublicRoutines() {
       LEFT JOIN activities a ON ra."activityId" = a.id
       WHERE r."isPublic" = true
     `);
-    console.log("publicRoutines:", publicRoutines);
-    console.log("publicRoutines length:", publicRoutines.length);
     const publicRoutinesMap = new Map(); // To prevent duplicate routines
     publicRoutines.forEach((row) => {
       const {
@@ -445,7 +448,12 @@ async function updateRoutine({ id, ...fields }) {
 
 async function destroyRoutine(id) {
   try {
-    // Delete all routine_activities associated with the given routine id
+    const deletedRoutine = await getRoutineById(id);
+
+    if (!deletedRoutine) {
+      return null;
+    }
+
     await client.query(
       `
         DELETE FROM routine_activities
@@ -454,7 +462,6 @@ async function destroyRoutine(id) {
       [id]
     );
 
-    // Delete the routine itself
     const { rowCount } = await client.query(
       `
         DELETE FROM routines
@@ -463,13 +470,11 @@ async function destroyRoutine(id) {
       [id]
     );
 
-    // Check if the routine was successfully deleted
     if (rowCount === 0) {
-      // No routine with the specified id found
       return null;
     }
 
-    return id; // Return the id of the deleted routine
+    return deletedRoutine; 
   } catch (error) {
     throw error;
   }
@@ -487,3 +492,4 @@ module.exports = {
   updateRoutine,
   destroyRoutine,
 };
+

@@ -1,178 +1,166 @@
-/* eslint-disable no-useless-catch */
 const express = require("express");
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const {   
+const {
     createUser,
     getUser,
     getUserById,
-    getUserByUsername } = require('../db/users');
-
-    function generateToken(user) {
-        const payload = {
-            id: user.id,
-            username: user.username,
-        };
-        const JWT_SECRET = process.env.JWT_SECRET; // Your JWT secret key
-        return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
-    }
-
+    getUserByUsername
+} = require('../db/users');
+const {
+getAllRoutinesByUser,
+getPublicRoutinesByUser
+} = require('../db/routines');
 // POST /api/users/register
-
-  
-router.post('/register', async (req, res, next) => {
-  try {
+router.post("/register", async (req, res, next) => {
     const { username, password } = req.body;
-
-    if (password.length < 8) {
-      return res.status(400).json({
-        success: false,
-        error: "Password Too Short!",
-        message: 'Password must be at least 8 characters long.',
-      });
-    }
-
-    const newUser = await createUser({
-      username,
-      password,
-    });
-
-    res.json({
-      success: true,
-      error: null,
-      data: {
-        message: 'Thanks for signing up!',
+    try {
+      const userExists = await getUserByUsername(username);
+      if (userExists) {
+        return res.status(409).json({
+            error: 'Username already exists.',
+            message: `User ${username} is already taken.`,
+            name: 'UserExistsError'
+        });
+      }
+      if (password.length < 8) {
+        return res.status(400).json({
+            error: 'Password must be at least 8 characters long',
+            message: 'Password Too Short!',
+            name: 'UserPasswordError'
+        });
+      }
+      const newUser = await createUser({ username, password });
+      const token = jwt.sign(
+        {
+          id: newUser.id,
+          username: newUser.username,
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1w",
+        }
+      );
+      res.json({
+        message: "Thank you for signing up",
+        token,
         user: {
           id: newUser.id,
           username: newUser.username,
         },
-      },
-      message: 'Any message you want to include here',
-      token: 'Any token you want to include here',
-    });
-  } catch (error) {
-    // Handle specific errors
-    if (error.message === 'Username already exists.') {
-      return res.status(409).json({
-        success: false,
-        error: 'UserExists',
-        message: 'Username already exists.',
       });
-    }
-
-    
-    if (error.message === 'Password Too Short!') {
-      return res.status(400).json({
-        success: false,
-        error: 'PasswordTooShortError',
-        message: 'Password must be at least 8 characters long.',
-      });
-    }
-
-    next(error);
-  }
-});
-
-  
-router.post('/register', async (req, res, next) => {
-    
-    
-    try {
-        const { username, password } = req.body;
-        const hashPassword = await bcrypt.hash(password, 10);
-        const newUser = await createUser({
-            username, 
-            password: hashPassword,
-        });
-        res.json({
-            success: true,
-            error: null,
-            data: {
-                token: generateToken(newUser),
-                message: "Thanks for signing up!",
-            }, 
-        });
-        
     } catch ({ name, message }) {
-        next({ name, message });
+      next({
+        name: "UserRegistrationError",
+        message: "There was an error registering user",
+      });
     }
 });
-
 // POST /api/users/login
-
 router.post("/login", async (req, res, next) => {
+    const { username, password } = req.body;
     try {
-      const { username, password } = req.body;
-  
-      const user = await getUser({ username, password });
+      const user = await getUserByUsername(username);
       if (!user) {
-        return res.status(401).json({
-          success: false,
-          error: "Authentication failed",
-          message: "Invalid credentials",
+        return next({
+          error: "User not found",
+          message: "User with the provided username does not exist",
+          name: "UserNotFoundError",
         });
       }
-  
-      const token = generateToken(user);
-  
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+        return next({
+          error: "Invalid credentials",
+          message: "Invalid username or password",
+          name: "InvalidCredentialsError",
+        });
+      }
+      const token = jwt.sign(
+        {
+          id: user.id,
+          username: user.username,
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1w",
+        }
+      );
       res.json({
-        success: true,
-        error: null,
-        data: {
-          token,
-          message: "Login successful!",
+        message: "you're logged in!",
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
         },
       });
-    } catch (error) {
-      next({ message: error.message });
+    } catch ({ name, message }) {
+      next({
+        name: 'LoginError',
+        message: 'There was an error during login'
+      });
     }
   });
 // GET /api/users/me
-
 router.get("/me", async (req, res, next) => {
     try {
-      const { user } = req;
-      // Assuming you have a middleware to attach the user object to req
-      if (!user) {
+      const token = req.headers.authorization?.split(" ")[1];
+      if (!token) {
         return res.status(401).json({
-          success: false,
-          error: "Unauthorized",
-          message: "You must be logged in to access this route.",
+          error: "No token provided",
+          message: "You must be logged in to perform this action",
+          name: "UnauthorizedError",
         });
       }
-  
-      
-      delete user.password;
-  
-      res.json({
-        success: true,
-        error: null,
-        data: user,
-      });
+      const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+      if (!decodedToken || !decodedToken.id) {
+        return res.status(401).json({
+          error: "Invalid token",
+          message: "You must be logged in to perform this action",
+          name: "UnauthorizedError",
+        });
+      }
+      const userId = decodedToken.id;
+      const user = await getUserById(userId);
+      if (!user) {
+        return res.status(401).json({
+          error: "User not found",
+          message: "You must be logged in to perform this action",
+          name: "UnauthorizedError",
+        });
+      }
+      res.json(user);
     } catch (error) {
       next(error);
     }
-  });
-  
+});
 // GET /api/users/:username/routines
-
 router.get("/:username/routines", async (req, res, next) => {
     try {
-      const { username } = req.params;
-  
-      
-      const publicRoutines = await getPublicRoutinesByUsername(username);
-  
-      res.json({
-        success: true,
-        error: null,
-        data: publicRoutines,
-      });
+      const token = req.headers.authorization?.split(" ")[1];
+      if (!token) {
+        return res.status(401).json({ error: "You must be logged in to perform this action" });
+      }
+      const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+      if (!decodedToken || !decodedToken.id) {
+        return res.status(401).json({ error: "Invalid token" });
+      }
+      const username = req.params.username;
+      const user = await getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      if (decodedToken.username === username) {
+        const allRoutines = await getAllRoutinesByUser({ username });
+        return res.json(allRoutines);
+      } else {
+        const publicRoutines = await getPublicRoutinesByUser({ username });
+        return res.json(publicRoutines);
+      }
     } catch (error) {
       next(error);
     }
-  });
-
+});
 module.exports = router;
