@@ -142,6 +142,8 @@ async function getAllPublicRoutines() {
       LEFT JOIN activities a ON ra."activityId" = a.id
       WHERE r."isPublic" = true
     `);
+    console.log("publicRoutines:", publicRoutines);
+    console.log("publicRoutines length:", publicRoutines.length);
     const publicRoutinesMap = new Map(); // To prevent duplicate routines
     publicRoutines.forEach((row) => {
       const {
