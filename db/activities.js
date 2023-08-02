@@ -1,6 +1,6 @@
 const client = require('./client');
 
-/* async function createActivity({ name, description }) {
+async function createActivity({ name, description }) {
   try {
     // Lowercase the activity name to ensure case-insensitive uniqueness
     const lowercasedName = name.toLowerCase();
@@ -29,111 +29,7 @@ const client = require('./client');
   } catch (error) {
     throw error;
   }
-} */
-/* async function createActivity({ name, description }) {
-  try {
-    const lowercasedName = name.toLowerCase();
-    
-    console.log("Received request to create a new activity.");
-    console.log("Checking if an activity with the name '" + name + "' already exists.");
-    
-    const { rows: existingActivities } = await client.query(
-      `SELECT * FROM activities WHERE LOWER(name) = $1;`,
-      [lowercasedName]
-    );
-
-    if (existingActivities.length > 0) {
-      const error = new Error('DuplicateActivity');
-      error.name = 'DuplicateActivity';
-      error.message = `An activity with name '${name}' already exists.`;
-      throw error;
-    }
-
-    const { rows: [activity] } = await client.query(
-      `INSERT INTO activities (name, description)
-      VALUES ($1, $2)
-      RETURNING *;
-      `,
-      [lowercasedName, description]
-    );
-    
-    console.log("Creating a new activity with the name '" + name + "'.");
-    return activity;
-  } catch (error) {
-    throw error;
-  }
-} */
-
-/* async function createActivity({ name, description }) {
-  try {
-    // Lowercase the activity name to ensure case-insensitive uniqueness
-    const lowercasedName = name.toLowerCase();
-
-    console.log("Received request to create a new activity.");
-    console.log("Checking if an activity with the name '" + name + "' already exists.");
-    // Check if an activity with the same name already exists
-    const { rows: existingActivities } = await client.query(
-      `SELECT * FROM activities WHERE LOWER(name) = $1;`,
-      [lowercasedName]
-    );
-
-    if (existingActivities.length > 0) {
-      // Activity with the same name already exists, throw a custom error
-      const error = new Error('An activity with name ' + name + ' already exists.');
-      error.name = 'DuplicateActivity';
-      error.message = `An activity with name ${name} already exists.`; // Set the error message as expected by the test
-      throw error;
-    }
-
-    // No activity with the same name found, proceed with insertion
-    const { rows: [activity] } = await client.query(
-      `INSERT INTO activities (name, description)
-      VALUES ($1, $2)
-      RETURNING *;
-      `,
-      [lowercasedName, description]
-    );
-    console.log("Creating a new activity with the name '" + name + "'.");
-    return activity;
-  } catch (error) {
-    throw error;
-  }
-} */
-
-async function createActivity(name, description) {
-  try {
-    const existingActivity = await Activity.findOne({ where: { name } });
-
-    if (existingActivity) {
-      // If an activity with the same name already exists, return an error response.
-      return {
-        success: false,
-        error: "ActivityExists",
-        message: `An activity with name ${name} already exists`,
-      };
-    }
-
-    // If the activity does not exist, create it and return the success response.
-    const newActivity = await Activity.create({
-      name,
-      description,
-    });
-
-    return {
-      success: true,
-      data: newActivity,
-      error: null,
-    };
-  } catch (error) {
-    // Handle any other errors that might occur during activity creation.
-    return {
-      success: false,
-      error: "ServerError",
-      message: "An error occurred while creating the activity.",
-    };
-  }
 }
-
 
 
 async function getAllActivities() {
@@ -152,7 +48,7 @@ async function getAllActivities() {
 
 async function getActivityById(id) {
   try {
-    const { rows: [activity] } = await client.query(
+    const { rows: [activity]} = await client.query(
       `
       SELECT *
       FROM activities
@@ -162,16 +58,13 @@ async function getActivityById(id) {
     );
 
     if (!activity) {
-  
-      throw new Error("Activity not found");
+      throw error
     }
-
     return activity;
   } catch (error) {
     throw error;
   }
 }
-
 
 async function getActivityByName(name) {
   try {
@@ -283,4 +176,3 @@ module.exports = {
   updateActivity,
   attachActivityToRoutine
 }
-

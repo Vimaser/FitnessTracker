@@ -21,6 +21,7 @@ const {
 const {
   getRoutineActivitiesByRoutine,
 } = require('../db/routine_activities');
+
 // GET /api/routines
 router.get('/', async (req, res, next) => {
   try {
@@ -30,6 +31,7 @@ router.get('/', async (req, res, next) => {
     next(error);
   }
 });
+
 // POST /api/routines
 router.post('/', async (req, res, next) => {
   try {
@@ -57,6 +59,7 @@ router.post('/', async (req, res, next) => {
     next(error);
   }
 });
+
 // PATCH /api/routines/:routineId
 router.patch('/:routineId', async (req, res, next) => {
   try {
@@ -105,6 +108,7 @@ router.patch('/:routineId', async (req, res, next) => {
     next(error);
   }
 });
+
   // DELETE /api/routines/:routineId
 router.delete('/:routineId', async (req, res, next) => {
   try {
@@ -154,6 +158,7 @@ router.delete('/:routineId', async (req, res, next) => {
     next(error);
   }
 });
+
 // POST /routines/:routineId/activities
 router.post('/:routineId/activities', async (req, res, next) => {
   try {
@@ -215,4 +220,5 @@ router.post('/:routineId/activities', async (req, res, next) => {
     next(error);
   }
 });
+
 module.exports = router;
