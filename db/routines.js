@@ -492,4 +492,3 @@ module.exports = {
   updateRoutine,
   destroyRoutine,
 };
-

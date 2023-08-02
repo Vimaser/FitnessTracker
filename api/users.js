@@ -13,7 +13,9 @@ const {
 getAllRoutinesByUser,
 getPublicRoutinesByUser
 } = require('../db/routines');
+
 // POST /api/users/register
+
 router.post("/register", async (req, res, next) => {
     const { username, password } = req.body;
     try {
@@ -58,6 +60,7 @@ router.post("/register", async (req, res, next) => {
       });
     }
 });
+
 // POST /api/users/login
 router.post("/login", async (req, res, next) => {
     const { username, password } = req.body;
@@ -102,7 +105,8 @@ router.post("/login", async (req, res, next) => {
         message: 'There was an error during login'
       });
     }
-  });
+});
+
 // GET /api/users/me
 router.get("/me", async (req, res, next) => {
     try {
@@ -136,6 +140,7 @@ router.get("/me", async (req, res, next) => {
       next(error);
     }
 });
+
 // GET /api/users/:username/routines
 router.get("/:username/routines", async (req, res, next) => {
     try {
@@ -163,4 +168,5 @@ router.get("/:username/routines", async (req, res, next) => {
       next(error);
     }
 });
+
 module.exports = router;
