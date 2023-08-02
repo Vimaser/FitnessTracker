@@ -19,7 +19,7 @@ app.use('/api/activities', require('./api/activities'));
 app.use('/api/routines', require('./api/routines'));
 
 app.get('/health', async (req, res, next) => {
-    res.status(200).json({ message: "Server is healthy!" })
+    res.status(200).json({ message: "Server is healthy!" });
 });
 
 app.use((req, res, next) => {
